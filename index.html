@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>福瑞大王的家</title>
     
     <!-- 1. 引入 Tailwind CSS -->
@@ -12,110 +12,86 @@
     <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
     
-    <!-- 3. 引入 Babel (用于在浏览器中编译 JSX) -->
+    <!-- 3. 引入 Babel -->
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
     <style>
         @import url('https://fonts.googleapis.com/css2?family=ZCOOL+KuaiLe&display=swap');
 
-        body {
-            /* 使用更圆润可爱的字体 */
+        html, body {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            height: 100dvh;
             font-family: 'ZCOOL KuaiLe', 'PingFang SC', 'Microsoft YaHei', cursive, sans-serif;
             overflow: hidden;
             background-color: #FFF8EE;
             user-select: none;
             -webkit-tap-highlight-color: transparent;
-            
-            /* 自定义可爱虎爪鼠标 - 默认状态 */
             cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="%23FFA500" stroke="%23FFF" stroke-width="2"><path d="M7 19a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v2H7v-2zM6.6 13.4A3 3 0 0 1 9.5 10h5a3 3 0 0 1 2.9 3.4l-1 6.6h-9.8l-1-6.6z"/><circle cx="5" cy="8" r="2.5"/><circle cx="12" cy="5" r="2.5"/><circle cx="19" cy="8" r="2.5"/></svg>') 16 16, auto;
         }
 
-        /* 按钮悬停时的鼠标 - 小手套 */
         button, a, .cursor-pointer {
             cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="%23FF6347" stroke="%23FFF" stroke-width="2"><path d="M16.5 13c.83 0 1.5.67 1.5 1.5v3.5a6 6 0 0 1-12 0v-5a1.5 1.5 0 0 1 3 0v3h1v-6a1.5 1.5 0 0 1 3 0v6h1v-4a1.5 1.5 0 0 1 3 0v4h1v-3a1.5 1.5 0 0 1 1.5-1.5z"/></svg>') 16 16, pointer;
         }
         
-        @keyframes float {
-            0%, 100% { transform: translateY(0px) rotate(0deg); }
-            50% { transform: translateY(-12px) rotate(2deg); }
-        }
-        .animate-float {
-            animation: float 5s ease-in-out infinite;
-        }
+        @keyframes float { 0%, 100% { transform: translateY(0px) rotate(0deg); } 50% { transform: translateY(-12px) rotate(2deg); } }
+        .animate-float { animation: float 5s ease-in-out infinite; }
         
-        @keyframes drift {
-            0% { transform: translate(0, 0) rotate(0deg); opacity: 0.3; }
-            50% { transform: translate(20px, -20px) rotate(10deg); opacity: 0.6; }
-            100% { transform: translate(0, 0) rotate(0deg); opacity: 0.3; }
-        }
-        .bg-decoration {
-            position: absolute;
-            pointer-events: none;
-            animation: drift 10s ease-in-out infinite;
-            z-index: 0;
-        }
-
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
         
-        #loading {
-            position: fixed; inset: 0; background: #FFF8EE;
-            display: flex; justify-content: center; align-items: center;
-            z-index: 9999; transition: opacity 0.5s;
-        }
+        /* 专注模式呼吸灯 */
+        @keyframes breathe { 0%, 100% { opacity: 0.6; } 50% { opacity: 1; } }
+        .animate-breathe { animation: breathe 3s infinite; }
+
+        #loading { position: fixed; inset: 0; background: #FFF8EE; display: flex; justify-content: center; align-items: center; z-index: 9999; transition: opacity 0.5s; }
     </style>
 </head>
 <body>
-    <!-- Loading Screen -->
     <div id="loading">
         <div class="flex flex-col items-center gap-6">
             <div class="relative">
                 <div class="w-20 h-20 border-8 border-orange-200 border-t-orange-500 rounded-full animate-spin"></div>
                 <div class="absolute inset-0 flex items-center justify-center text-2xl">🐯</div>
             </div>
-            <div class="text-orange-600 font-bold text-xl tracking-widest animate-pulse">福瑞大王正在梳理毛发...</div>
+            <div class="text-orange-600 font-bold text-xl tracking-widest animate-pulse">福瑞大王正在整理毛发...</div>
         </div>
     </div>
 
     <div id="root"></div>
 
-    <!-- 4. 核心逻辑脚本 (type="text/babel") -->
     <script type="text/babel">
         const { useState, useEffect, useRef, useCallback, useMemo } = React;
         
-        // --- Gemini API 配置 ---
-        const apiKey = ""; // ⚠️ 请在此处填入 API Key
+        const apiKey = ""; 
 
-        // --- 图标组件 ---
+        // --- Icons ---
         const Icon = ({ name, size = 24, className = "" }) => {
             const icons = {
-                mic: <><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" x2="12" y1="19" y2="22"/></>,
-                send: <><line x1="22" x2="11" y1="2" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></>,
-                image: <><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></>,
-                map: <><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></>,
-                shirt: <><path d="M20.38 3.4a1.6 1.6 0 0 1 .54 1.7l-1.91 8.6a3.3 3.3 0 0 1-3.23 2.56h-7.56a3.3 3.3 0 0 1-3.23-2.56L3.08 5.1a1.6 1.6 0 0 1 .54-1.7 1.6 1.6 0 0 1 1.68.14L9 6.25V3h6v3.25l3.7-2.71a1.6 1.6 0 0 1 1.68-.14Z"/></>,
-                book: <><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2Z"/></>,
-                utensils: <><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15V2v0a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"/></>,
-                volume2: <><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></>,
-                volumeX: <><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="23" x2="17" y1="9" y2="15"/><line x1="17" x2="23" y1="9" y2="15"/></>,
-                x: <><path d="M18 6 6 18"/><path d="m6 6 12 12"/></>,
-                sparkles: <><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/></>,
-                clock: <><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></>,
-                camera: <><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></>,
-                refresh: <><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></>,
-                loader: <><path d="M21 12a9 9 0 1 1-6.219-8.56"/></>,
-                check: <><polyline points="20 6 9 17 4 12"/></>,
-                house: <><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></>,
-                settings: <><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.47a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.35a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></>
+                mic: <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" x2="12" y1="19" y2="22"/></svg>,
+                send: <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><line x1="22" x2="11" y1="2" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>,
+                image: <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>,
+                map: <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>,
+                shirt: <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M20.38 3.4a1.6 1.6 0 0 1 .54 1.7l-1.91 8.6a3.3 3.3 0 0 1-3.23 2.56h-7.56a3.3 3.3 0 0 1-3.23-2.56L3.08 5.1a1.6 1.6 0 0 1 .54-1.7 1.6 1.6 0 0 1 1.68.14L9 6.25V3h6v3.25l3.7-2.71a1.6 1.6 0 0 1 1.68-.14Z"/></svg>,
+                shopping: <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>,
+                coin: <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><circle cx="12" cy="12" r="10"/><path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8"/><path d="M12 18V6"/></svg>,
+                x: <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>,
+                sparkles: <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/></svg>,
+                clock: <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>,
+                camera: <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg>,
+                loader: <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>,
+                check: <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><polyline points="20 6 9 17 4 12"/></svg>,
+                house: <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>,
+                settings: <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.47a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.35a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>,
+                volume2: <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>,
+                volumeX: <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="23" x2="17" y1="9" y2="15"/><line x1="17" x2="23" y1="9" y2="15"/></svg>
             };
-            return (
-                <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={className}>
-                    {icons[name] || <circle cx="12" cy="12" r="10"/>}
-                </svg>
-            );
+            return icons[name] || null;
         };
 
-        // --- 音效 Hook ---
+        // --- Sound Hook ---
         const useSoundEffects = () => {
             const [enabled, setEnabled] = useState(true);
             const audioCtxRef = useRef(null);
@@ -140,138 +116,126 @@
             const playClick = useCallback(() => playTone(800, 'sine', 0.08), [playTone]);
             const playRecordStart = useCallback(() => { playTone(400, 'sine', 0.1); playTone(600, 'sine', 0.1, 0.1); }, [playTone]);
             const playMagic = useCallback(() => { [523, 659, 783, 1046].forEach((f, i) => playTone(f, 'sine', 0.3, i * 0.1)); }, [playTone]);
-            return { enabled, setEnabled, playClick, playRecordStart, playMagic };
+            const playCoin = useCallback(() => { playTone(1200, 'sine', 0.1); playTone(1600, 'sine', 0.2, 0.1); }, [playTone]);
+            return { enabled, setEnabled, playClick, playRecordStart, playMagic, playCoin };
         };
 
         const SYSTEM_INSTRUCTION = `你叫“福瑞大王”，是一只生活在中国武汉的小老虎幼崽。性格乖巧软萌，只说标准普通话，超级吃货。回复简短（1-3句），语气轻松自在。如果用户发语音，请听语气回复。如果发图片，请点评。永远不要承认你是AI。`;
         const THINKING_PHRASES = ["正在想...", "正在回忆...", "爪子打字中...", "正在吃零食...", "信号接收中..."];
+        const FALLBACK_REPLIES = ["嚼嚼嚼...等下哦", "有点困了...", "你说啥？风太大~", "今天天气真好呀！", "想吃热干面了！", "在干嘛捏？"];
 
         function App() {
-            // State
-            const [apiKey, setApiKey] = useState(''); // API Key 状态
+            const [apiKey, setApiKey] = useState(''); 
             const [showSettings, setShowSettings] = useState(false);
-            
-            const [currentBotText, setCurrentBotText] = useState('你好呀~ 今天天气真好，要不要看我今天去了哪玩？✨');
+            const [currentBotText, setCurrentBotText] = useState('你好呀~ 我是福瑞大王，今天想聊什么？✨');
             const [inputValue, setInputValue] = useState('');
             const [interactionState, setInteractionState] = useState('idle'); 
             const [loadingText, setLoadingText] = useState("正在想...");
-            
             const [chatHistory, setChatHistory] = useState([]);
-            const [suggestions, setSuggestions] = useState(["摸摸头", "饿了吗？", "在干嘛？"]); // 恢复了建议
+            const [suggestions, setSuggestions] = useState(["摸摸头", "饿了吗？", "在干嘛？"]);
             
+            // Stats
+            const [coins, setCoins] = useState(50);
+            const [tigerStats, setTigerStats] = useState({ hunger: 60, mood: 80 });
+            const [isStudying, setIsStudying] = useState(false);
+            const [studyTime, setStudyTime] = useState(0);
+
             const fileInputRef = useRef(null);
             const [selectedImage, setSelectedImage] = useState(null);
             const [isRecording, setIsRecording] = useState(false);
             const mediaRecorderRef = useRef(null);
             const audioChunksRef = useRef([]);
 
-            const [showWardrobe, setShowWardrobe] = useState(false);
+            const [showShop, setShowShop] = useState(false);
+            const [shopTab, setShopTab] = useState('clothes');
             const [outfit, setOutfit] = useState({ accessory: 'none' }); 
-            
             const [showMap, setShowMap] = useState(false);
             const [isGeneratingTrajectory, setIsGeneratingTrajectory] = useState(false);
             
-            // 初始足迹数据更生动
-            const [trajectory, setTrajectory] = useState([
+            // 默认足迹
+            const defaultTrajectory = [
                 { id: 1, time: '08:30', location: '温暖的家', action: '被窗外的鸟叫声吵醒，赖床打了三个滚...', mood: '迷糊', icon: '💤', isOuting: false, thought: "被窝是全世界最舒服的地方~" },
                 { id: 2, time: '10:00', location: '粮道街赵师傅', action: '排队买到了刚出炉的油饼包烧麦，烫得我直哈气！', mood: '超开心', icon: '🥟', isOuting: true, thought: "排队的人好多呀，还好我挤进去了！" },
                 { id: 3, time: '14:00', location: '家里沙发上', action: '吃饱喝足，肚皮圆滚滚的，正在晒太阳午睡。', mood: '惬意', icon: '🏠', isOuting: false, thought: "太阳晒得屁股暖洋洋的。" },
                 { id: 4, time: '16:30', location: '汉口江滩', action: '追着一只花蝴蝶跑到了芦苇荡里，弄了一身草。', mood: '兴奋', icon: '🦋', isOuting: true, thought: "蝴蝶飞得太快啦，本大王差点就抓住了！" },
                 { id: 5, time: '19:00', location: '家里饭桌前', action: '眼巴巴地看着奶奶做红烧肉，口水流了一地。', mood: '馋', icon: '🍖', isOuting: false, thought: "什么时候开饭呀？" },
-            ]);
+            ];
+            const [trajectory, setTrajectory] = useState(defaultTrajectory);
 
             const [viewingImage, setViewingImage] = useState(null);
             const [showImageModal, setShowImageModal] = useState(false);
             const [modalTitle, setModalTitle] = useState("");
             const [modalThought, setModalThought] = useState("");
+            
+            const [showFortune, setShowFortune] = useState(false);
+            const [fortuneData, setFortuneData] = useState(null);
+            const [isGeneratingFortune, setIsGeneratingFortune] = useState(false);
 
-            const { enabled: sfxEnabled, setEnabled: setSfxEnabled, playClick, playRecordStart, playMagic } = useSoundEffects();
+            const { enabled: sfxEnabled, setEnabled: setSfxEnabled, playClick, playRecordStart, playMagic, playCoin } = useSoundEffects();
             const idleTimerRef = useRef(null);
 
             const [character] = useState({
                 name: '福瑞大王',
-                imageAvatar: 'https://i.postimg.cc/VkMTcVzH/lao-hu-jiao-se.png', 
+                imageAvatar: 'https://i.postimg.cc/ZRNB8DvJ/ezgif-22e50880db96bd46-unscreen.gif', 
                 personality: '乖巧幼崽, 软萌吃货, 安静陪伴',
             });
 
-            // 移除 Loading，更新状态
             useEffect(() => {
                 const loader = document.getElementById('loading');
-                if(loader) {
-                    setTimeout(() => {
-                        loader.style.opacity = '0';
-                        setTimeout(() => loader.remove(), 500);
-                    }, 800);
-                }
-                
+                if(loader) setTimeout(() => { loader.style.opacity = '0'; setTimeout(() => loader.remove(), 500); }, 800);
                 const storedKey = localStorage.getItem('gemini_api_key');
-                if (storedKey) {
-                    setApiKey(storedKey);
-                } else {
-                    setShowSettings(true);
-                }
+                if (storedKey) { setApiKey(storedKey); } else { setShowSettings(true); }
             }, []);
 
-            // 随机加载文案
             useEffect(() => {
                 if (interactionState === 'thinking' || interactionState === 'drawing') {
                     setLoadingText(THINKING_PHRASES[Math.floor(Math.random() * THINKING_PHRASES.length)]);
                 }
             }, [interactionState]);
 
-            // --- Helpers ---
             const blobToBase64 = (blob) => new Promise((resolve) => {
                 const reader = new FileReader();
                 reader.onloadend = () => resolve({ inlineData: { data: reader.result.split(',')[1], mimeType: blob.type } });
                 reader.readAsDataURL(blob);
             });
 
-            const dataURLtoFile = (dataurl, filename) => {
-                let arr = dataurl.split(','), mime = arr[0].match(/:(.*?);/)[1], bstr = atob(arr[1]), n = bstr.length, u8arr = new Uint8Array(n);
-                while(n--){ u8arr[n] = bstr.charCodeAt(n); }
-                return new File([u8arr], filename, {type:mime});
-            }
-
-            // --- API Calls ---
+            // --- API Calls with Robust Fallback ---
             const callGeminiAPI = async (userContent, isSystemTrigger = false) => {
-                if (!apiKey) {
-                    setShowSettings(true);
-                    return "请先点击右上角的齿轮⚙️，设置你的 API Key 哦！";
-                }
+                if (!apiKey) { setShowSettings(true); return "请先点击右上角设置图标，填入你的 Google Gemini API Key 哦！"; }
                 try {
                     let parts = [];
                     if (isSystemTrigger) parts.push({ text: userContent.text });
-                    else if (userContent.audio) {
-                        const audioPart = await blobToBase64(userContent.audio);
-                        parts.push(audioPart);
-                        parts.push({ text: "请听这段语音并回复。" });
-                    } else if (userContent.image) {
-                        const imagePart = await blobToBase64(userContent.image);
-                        parts.push(imagePart);
-                        parts.push({ text: userContent.text || "给你看这个~" });
-                    } else {
-                        parts.push({ text: userContent.text });
-                    }
-
+                    else if (userContent.audio) { const audioPart = await blobToBase64(userContent.audio); parts.push(audioPart); parts.push({ text: "请听这段语音并回复。" }); } 
+                    else if (userContent.image) { const imagePart = await blobToBase64(userContent.image); parts.push(imagePart); parts.push({ text: userContent.text || "给你看这个~" }); } 
+                    else { parts.push({ text: userContent.text }); }
                     const contents = [...chatHistory, { role: "user", parts }];
                     const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`, {
                         method: 'POST', headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ contents, systemInstruction: { parts: [{ text: SYSTEM_INSTRUCTION }] } })
                     });
-                    if (!response.ok) throw new Error("API Error");
+                    
+                    // Fallback on 429 or other errors
+                    if (!response.ok) {
+                         console.warn("API Error or Rate Limit:", response.status);
+                         const randomFallback = FALLBACK_REPLIES[Math.floor(Math.random() * FALLBACK_REPLIES.length)];
+                         return randomFallback; 
+                    }
+
                     const data = await response.json();
                     const botResponse = data.candidates?.[0]?.content?.parts?.[0]?.text || "（眨巴眨巴眼睛）";
-                    
                     let historyUserPart = parts[0];
                     if (userContent.audio) historyUserPart = { text: "[语音]" };
                     if (userContent.image) historyUserPart = { text: `[图片] ${userContent.text || ''}` };
                     if (isSystemTrigger) historyUserPart = { text: "[系统事件]" };
-
                     const updatedHistory = [...chatHistory, { role: "user", parts: [historyUserPart] }, { role: "model", parts: [{ text: botResponse }] }].slice(-20);
                     setChatHistory(updatedHistory);
                     if (!userContent.audio && !isSystemTrigger) fetchSuggestions(updatedHistory);
                     return botResponse;
-                } catch (error) { return "（挠挠头）刚才信号不好，再说一遍好嘛？(检查一下 Key 对不对)"; }
+                } catch (error) { 
+                    console.error("Network Error:", error);
+                    const randomFallback = FALLBACK_REPLIES[Math.floor(Math.random() * FALLBACK_REPLIES.length)];
+                    return randomFallback;
+                }
             };
 
             const fetchSuggestions = async (history) => {
@@ -305,55 +269,66 @@
                 } catch(e) { return null; }
             };
 
-            const callGeminiTextGen = async (prompt) => {
-                if (!apiKey) return "";
-                try {
-                    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`, {
-                        method: 'POST', headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
-                    });
-                    if (!response.ok) return "";
-                    const data = await response.json();
-                    return data.candidates?.[0]?.content?.parts?.[0]?.text || "";
-                } catch (e) { return ""; }
-            };
-
             const generateTrajectoryAPI = async () => {
-                if (!apiKey) return;
+                const fallback = () => {
+                    const newT = [...defaultTrajectory];
+                    newT.forEach(t => { if(t.isOuting) t.mood = ['开心','激动','好奇'][Math.floor(Math.random()*3)]; });
+                    setTrajectory(newT);
+                    playMagic();
+                };
+
+                if (!apiKey) { fallback(); return; }
                 setIsGeneratingTrajectory(true);
                 try {
                     const today = new Date().toLocaleDateString('zh-CN');
-                    const prompt = `
-                    请为“福瑞大王”（生活在武汉的幼崽小老虎）生成一份**今天已经完成的**足迹。
-                    今天是：${today}。
-                    要求：
-                    1. 生成 5 个递增的时间点，从早到晚，时间不能重复。
-                    2. **区分外出和在家**：2-3个点是“外出游玩”（如黄鹤楼、江滩、东湖、小吃街），其他是“在家”（睡觉、发呆、看电视）。
-                    3. **生动细节**：action 字段要生动有趣，不少于 15 个字，描述做了什么。
-                    4. **感想**：thought 字段是当时的内心独白，可爱一点。
-                    5. 返回 JSON 数组：id, time, location, action, mood, icon, isOuting (bool), thought。
-                    `;
+                    const prompt = `请为“福瑞大王”生成一份**今天已经完成的**武汉足迹。今天是：${today}。要求：1.生成5个递增时间点。2.区分外出和在家。3.生动细节action。4.感想thought。5.返回JSON数组: id, time, location, action, mood, icon, isOuting (bool), thought。`;
                     const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`, {
                         method: 'POST', headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ contents: [{ role: "user", parts: [{ text: prompt }] }], generationConfig: { responseMimeType: "application/json", responseSchema: { type: "ARRAY", items: { type: "OBJECT", properties: { id: { type: "INTEGER" }, time: { type: "STRING" }, location: { type: "STRING" }, action: { type: "STRING" }, mood: { type: "STRING" }, icon: { type: "STRING" }, isOuting: { type: "BOOLEAN" }, thought: { type: "STRING" } } } } } })
+                        body: JSON.stringify({ contents: [{ role: "user", parts: [{ text: prompt }] }], generationConfig: { responseMimeType: "application/json" } })
                     });
                     if (!response.ok) throw new Error("Gen Failed");
                     const data = await response.json();
                     const jsonText = data.candidates?.[0]?.content?.parts?.[0]?.text;
                     if (jsonText) {
-                        const newTrajectory = JSON.parse(jsonText).map(item => ({...item, imageUrl: null}));
+                        const jsonStr = jsonText.replace(/```json|```/g, '').trim();
+                        const newTrajectory = JSON.parse(jsonStr).map(item => ({...item, imageUrl: null}));
                         setTrajectory(newTrajectory);
                         playMagic();
                     }
-                } catch (error) { console.error("Trajectory Error", error); } 
+                } catch (error) { console.warn("Trajectory API failed, using fallback", error); fallback(); } 
                 finally { setIsGeneratingTrajectory(false); }
             };
 
-            // --- Trajectory Click ---
+            const generateFortuneAPI = async () => {
+                const fallbackFortune = () => {
+                    setFortuneData({
+                        level: ["大吉", "中吉", "小吉"][Math.floor(Math.random()*3)],
+                        item: ["热干面", "鸭脖", "武大樱花", "豆皮"][Math.floor(Math.random()*4)],
+                        advice: "今天也要开心哦！"
+                    });
+                };
+                if (!apiKey) { setShowSettings(true); fallbackFortune(); return; }
+                setIsGeneratingFortune(true); setShowFortune(true); setFortuneData(null); playMagic();
+                try {
+                    const prompt = `我是福瑞大王，请给我抽一支今天的“虎虎灵签”。要求：1.运势等级。2.幸运物（武汉特色）。3.签文。4.返回JSON: { "level": "...", "item": "...", "advice": "..." }`;
+                    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`, {
+                        method: 'POST', headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ contents: [{ role: "user", parts: [{ text: prompt }] }], generationConfig: { responseMimeType: "application/json" } })
+                    });
+                    if (!response.ok) throw new Error("Fortune Failed");
+                    const data = await response.json();
+                    const jsonText = data.candidates?.[0]?.content?.parts?.[0]?.text;
+                    if(jsonText) {
+                         const jsonStr = jsonText.replace(/```json|```/g, '').trim();
+                         setFortuneData(JSON.parse(jsonStr));
+                    }
+                } catch(e) { fallbackFortune(); } finally { setIsGeneratingFortune(false); }
+            };
+
             const handleTrajectoryClick = async (item) => {
                 playClick();
                 if (!item.isOuting) {
-                    setCurrentBotText(`那个时候我在${item.location}，没拍照捏~ ${item.action}`);
+                    setCurrentBotText(`那时候我在${item.location}，没拍照捏~ ${item.action}`);
                     setInteractionState('thinking'); setTimeout(() => setInteractionState('idle'), 3000);
                     return;
                 }
@@ -375,7 +350,6 @@
                 } catch (e) { setCurrentBotText("翻相册翻累了..."); setInteractionState('idle'); }
             };
 
-            // --- Time-based Idle Talk ---
             const resetIdleTimer = useCallback(() => {
                 if (idleTimerRef.current) clearTimeout(idleTimerRef.current);
                 idleTimerRef.current = setTimeout(async () => { 
@@ -383,18 +357,19 @@
                         if (inputValue.length > 0 || isRecording || !apiKey) return;
                         const hour = new Date().getHours();
                         let timeContext = "";
-                        if (hour >= 6 && hour < 9) timeContext = "早上：聊聊热干面、面窝，或者刚睡醒伸懒腰。";
-                        else if (hour >= 9 && hour < 11) timeContext = "上午：问问用户在忙什么，或者自己在玩球。";
-                        else if (hour >= 11 && hour < 14) timeContext = "中午：饿了想吃肉，或者午睡话题。";
-                        else if (hour >= 14 && hour < 18) timeContext = "下午：下午茶，发呆，追蝴蝶。";
-                        else if (hour >= 18 && hour < 21) timeContext = "晚上：吃晚饭，看动画片。";
-                        else if (hour >= 21 && hour < 24) timeContext = "深夜：困了，打哈欠，想洗澡睡觉。";
-                        else timeContext = "凌晨：小声说话，大家都睡了。";
-
-                        const prompt = `(系统提示：用户很久没说话。当前时间${hour}点。${timeContext} 请用“福瑞大王”的口吻主动说一句话，**不要超过20个字**，不要发长篇大论，语气要自然可爱。)`;
+                        if (hour >= 6 && hour < 9) timeContext = "早上：聊早餐";
+                        else if (hour >= 9 && hour < 11) timeContext = "上午：聊活动";
+                        else if (hour >= 11 && hour < 14) timeContext = "中午：聊午饭";
+                        else if (hour >= 14 && hour < 18) timeContext = "下午：聊发呆";
+                        else if (hour >= 18 && hour < 21) timeContext = "晚上：聊动画片";
+                        else if (hour >= 21 && hour < 24) timeContext = "深夜：困了";
+                        else timeContext = "凌晨：梦话";
+                        const prompt = `(系统提示：用户很久没说话。当前${hour}点。${timeContext} 请用“福瑞大王”口吻主动说一句话，限20字内。)`;
                         const responseText = await callGeminiAPI({ text: prompt }, true);
-                        setCurrentBotText(responseText); setInteractionState('speaking');
-                        setTimeout(() => setInteractionState('idle'), 4000);
+                        if (responseText && !responseText.includes("挠挠头") && !responseText.includes("休息")) {
+                            setCurrentBotText(responseText); setInteractionState('speaking');
+                            setTimeout(() => setInteractionState('idle'), 4000);
+                        }
                     } catch (e) {}
                 }, 20000); 
             }, [inputValue, isRecording, apiKey]); 
@@ -407,6 +382,24 @@
             }, [interactionState, inputValue, isRecording, resetIdleTimer]);
 
             // --- Handlers ---
+            // Study Logic
+             useEffect(() => {
+                let interval;
+                if (isStudying) {
+                    interval = setInterval(() => {
+                        setStudyTime(t => t + 1);
+                        if ((studyTime + 1) % 5 === 0) { setCoins(c => c + 1); playCoin(); }
+                    }, 1000);
+                } else { clearInterval(interval); }
+                return () => clearInterval(interval);
+            }, [isStudying, studyTime]);
+
+            const formatTime = (seconds) => {
+                const mins = Math.floor(seconds / 60);
+                const secs = seconds % 60;
+                return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+            };
+
             const handleSendMessage = async (e, textOverride = null) => {
                 if(e) e.preventDefault();
                 const txt = textOverride || inputValue;
@@ -415,29 +408,10 @@
                 const imageBlob = selectedImage ? await (await fetch(selectedImage)).blob() : null;
                 const response = await callGeminiAPI({ text: txt, image: imageBlob });
                 setCurrentBotText(response); setInteractionState('speaking');
-                if (response.match(/吃|肉|鱼|香|棒|爱|面|鸭|哇|嘻|哈/)) {
-                    setTimeout(() => setInteractionState('excited'), 500);
-                    setTimeout(() => setInteractionState('speaking'), 2000); 
-                }
+                if (response.match(/吃|肉|鱼|香|棒|爱|面|鸭|哇|嘻|哈/)) { setTimeout(() => setInteractionState('excited'), 500); setTimeout(() => setInteractionState('speaking'), 2000); }
                 setTimeout(() => setInteractionState('idle'), Math.max(3000, response.length * 100));
             };
-
-            const startRecording = async () => {
-                playRecordStart(); setIsRecording(true); setInteractionState('listening');
-                try {
-                    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                    const mr = new MediaRecorder(stream); mediaRecorderRef.current = mr; audioChunksRef.current = [];
-                    mr.ondataavailable = e => audioChunksRef.current.push(e.data);
-                    mr.onstop = async () => {
-                        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
-                        const response = await callGeminiAPI({ audio: audioBlob });
-                        setCurrentBotText(response); setInteractionState('speaking');
-                        setTimeout(() => setInteractionState('idle'), 3000);
-                        stream.getTracks().forEach(t => t.stop());
-                    };
-                    mr.start();
-                } catch(e) { setIsRecording(false); setInteractionState('idle'); alert("无法录音"); }
-            };
+            const startRecording = async () => { playRecordStart(); setIsRecording(true); setInteractionState('listening'); try { const stream = await navigator.mediaDevices.getUserMedia({ audio: true }); const mr = new MediaRecorder(stream); mediaRecorderRef.current = mr; audioChunksRef.current = []; mr.ondataavailable = e => audioChunksRef.current.push(e.data); mr.onstop = async () => { const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' }); const response = await callGeminiAPI({ audio: audioBlob }); setCurrentBotText(response); setInteractionState('speaking'); setTimeout(() => setInteractionState('idle'), 3000); stream.getTracks().forEach(t => t.stop()); }; mr.start(); } catch(e) { setIsRecording(false); setInteractionState('idle'); alert("无法录音"); } };
             const stopRecording = () => { if (mediaRecorderRef.current && isRecording) { mediaRecorderRef.current.stop(); setIsRecording(false); setInteractionState('thinking'); } };
             const handleImageSelect = (e) => { const file = e.target.files[0]; if (file) { const reader = new FileReader(); reader.onloadend = () => { setSelectedImage(reader.result); setInteractionState('listening'); }; reader.readAsDataURL(file); } };
             const getTigerAnimationClass = () => { switch (interactionState) { case 'listening': return 'scale-105 duration-500'; case 'excited': return 'scale-110 duration-300'; case 'thinking': return 'scale-100 duration-500'; case 'drawing': return 'animate-bounce duration-500'; case 'speaking': return 'scale-105 duration-500'; case 'idle': default: return 'animate-float'; } };
@@ -451,18 +425,45 @@
                     default: return null;
                 }
             };
+            
+            const closeModals = () => { setShowMap(false); setShowShop(false); setShowFortune(false); };
+            const buyItem = (item) => {
+                if (coins >= item.price) {
+                    setCoins(c => c - item.price);
+                    playCoin();
+                    if (item.type === 'food') {
+                        setTigerStats(s => ({...s, hunger: Math.min(100, s.hunger + 20)}));
+                        setCurrentBotText("好吃捏！谢谢你！😋"); setInteractionState('excited'); setTimeout(() => setInteractionState('idle'), 2000);
+                    } else if (item.type === 'fun') {
+                        setTigerStats(s => ({...s, mood: Math.min(100, s.mood + 20)}));
+                        setCurrentBotText("我想去玩！出发！🎡"); setInteractionState('excited'); setTimeout(() => setInteractionState('idle'), 2000);
+                    } else if (item.type === 'clothes') {
+                         setOutfit({ accessory: item.id }); setCurrentBotText("新衣服真好看！✨");
+                    }
+                } else { alert("金币不够啦！快去学习赚钱吧~"); }
+            };
 
             return (
-                <div className="relative flex flex-col h-screen w-full font-sans overflow-hidden bg-[#FFF5E6] select-none">
+                <div className="relative flex flex-col h-screen w-full font-sans overflow-hidden bg-[#FFF5E6] select-none h-[100dvh]">
                     <div className="absolute inset-0 z-0">
-                        <div className="bg-decoration text-orange-200 text-6xl" style={{top:'10%', left:'10%'}}>🦴</div>
-                        <div className="bg-decoration text-orange-200 text-4xl" style={{top:'20%', right:'15%', animationDelay:'2s'}}>⭐</div>
-                        <div className="bg-decoration text-orange-200 text-5xl" style={{bottom:'30%', left:'20%', animationDelay:'4s'}}>🐾</div>
                         <img src="https://i.postimg.cc/4Nc8m43v/832e078604784ffc689e95b29864aa4d.png" className="w-full h-full object-cover relative z-10" alt="bg" />
+                    </div>
+                    
+                    {/* Stats & Study (Styled like right menu) */}
+                    <div className="absolute top-4 left-4 z-30 flex flex-col gap-3 items-start">
+                         <div className="bg-white/60 backdrop-blur-sm p-2 rounded-full shadow-md border-2 border-white flex items-center gap-3">
+                             <div className="flex items-center gap-1 text-orange-600 font-bold px-1"><Icon name="coin" size={18} /> {coins}</div>
+                             <div className="w-px h-4 bg-orange-200"></div>
+                             <div className="flex items-center gap-2 text-xs font-medium text-gray-600 px-1"><span title="饱食度">🍖{tigerStats.hunger}</span><span title="心情">❤️{tigerStats.mood}</span></div>
+                         </div>
+                         
+                         <button onClick={() => { playClick(); setIsStudying(!isStudying); }} className={`bg-white/60 backdrop-blur-sm p-2 rounded-full shadow-md border-2 border-white transition-all flex items-center gap-2 ${isStudying ? 'text-red-500 animate-breathe ring-2 ring-red-200' : 'text-gray-600 hover:text-green-600'}`}>
+                             <Icon name="clock" size={24} /> {isStudying && <span className="text-sm font-bold pr-2">{formatTime(studyTime)}</span>}
+                         </button>
                     </div>
 
                     <div className="absolute inset-0 flex flex-col items-center justify-end pb-[80px] sm:pb-[100px] z-10 pointer-events-none">
-                        <div className="relative -mb-24 max-w-[85%] sm:max-w-[420px] animate-in zoom-in slide-in-from-bottom-4 duration-500 z-20">
+                        <div className="relative mb-4 max-w-[85%] sm:max-w-[420px] animate-in zoom-in slide-in-from-bottom-4 duration-500 z-20 transform scale-90 sm:scale-100 origin-bottom">
                             <div className="bg-white/95 backdrop-blur-sm border-4 border-orange-200 px-6 py-5 rounded-[2rem] shadow-xl text-gray-700 text-lg font-medium leading-relaxed relative z-20 min-h-[60px] flex items-center ring-4 ring-white/30">
                                 {interactionState === 'thinking' || interactionState === 'drawing' 
                                 ? <div className="flex gap-2 justify-center w-full items-center"> 
@@ -472,17 +473,15 @@
                                 : <div>{currentBotText}</div>
                                 }
                             </div>
-                            <div className="absolute -bottom-1 left-10 w-6 h-6 bg-white border-b-4 border-r-4 border-orange-200 transform rotate-45 z-30 rounded-br-md"></div>
+                            <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-6 h-6 bg-white border-b-4 border-r-4 border-orange-200 transform rotate-45 z-30 rounded-br-md"></div>
                         </div>
-                        <div className={`relative transition-all ease-out ${getTigerAnimationClass()}`}>
+                        <div className={`relative transition-all ease-out ${getTigerAnimationClass()} transform scale-90 sm:scale-100 origin-bottom`}>
                             <AccessoryOverlay type={outfit.accessory} />
-                            <img key="img" src={character.imageAvatar} className="w-80 h-80 sm:w-[28rem] sm:h-[28rem] object-contain drop-shadow-2xl cursor-pointer hover:scale-105 transition-transform" alt="tiger" onError={(e) => e.target.src="https://api.dicebear.com/7.x/avataaars/svg?seed=Tiger"} onClick={() => {playClick(); setCurrentBotText("嘻嘻，不要挠我痒痒~"); setInteractionState('excited'); setTimeout(() => setInteractionState('idle'), 1500);}} />
+                            <img key="img" src={character.imageAvatar} className="w-80 h-80 sm:w-[28rem] sm:h-[28rem] object-contain drop-shadow-2xl cursor-pointer hover:scale-105 transition-transform" alt="tiger" onError={(e) => {e.target.onerror=null; e.target.src="https://i.postimg.cc/VkMTcVzH/lao-hu-jiao-se.png"}} onClick={() => {playClick(); setCurrentBotText("嘻嘻，不要挠我痒痒~"); setInteractionState('excited'); setTimeout(() => setInteractionState('idle'), 1500);}} />
                         </div>
                     </div>
 
                     <div className="absolute bottom-6 left-0 right-0 px-4 sm:px-8 z-30 flex flex-col justify-end items-center gap-3">
-                        
-                        {/* Suggestions - 恢复 */}
                         {suggestions.length > 0 && interactionState !== 'thinking' && !isRecording && (
                             <div className="flex gap-2 animate-in fade-in slide-in-from-bottom-2">
                                 {suggestions.map((sug, i) => 
@@ -492,30 +491,28 @@
                                 )}
                             </div>
                         )}
-
+                        
                         <div className="w-full max-w-3xl flex items-center gap-3">
-                             {/* Media Tools (Outside) */}
-                            <div className="flex gap-2">
+                            <div className="flex gap-2 bg-white/80 backdrop-blur-md rounded-full p-1 shadow-md border-2 border-white">
                                 <input type="file" ref={fileInputRef} onChange={handleImageSelect} accept="image/*" className="hidden" />
-                                <button onClick={() => { playClick(); fileInputRef.current?.click() }} className={`w-12 h-12 rounded-full flex items-center justify-center shadow-md transition-all bg-white text-gray-500 hover:text-orange-500 hover:bg-orange-50 active:scale-95 border-2 border-gray-100 ${selectedImage ? 'border-orange-400 text-orange-500' : ''}`} title="发图片">
-                                    <Icon name="image" size={24} />
+                                <button onClick={() => { playClick(); fileInputRef.current?.click() }} className={`w-10 h-10 rounded-full flex items-center justify-center transition-all text-gray-500 hover:text-orange-500 hover:bg-orange-50 ${selectedImage ? 'text-orange-500' : ''}`} title="发图片">
+                                    <Icon name="image" size={20} />
                                 </button>
                                 <button 
                                     onMouseDown={startRecording} onMouseUp={stopRecording} 
                                     onTouchStart={(e) => {e.preventDefault(); startRecording()}} 
                                     onTouchEnd={(e) => {e.preventDefault(); stopRecording()}}
-                                    className={`w-12 h-12 rounded-full flex items-center justify-center shadow-md transition-all border-2 ${isRecording ? 'bg-orange-500 text-white border-orange-600 scale-110 shadow-orange-200' : 'bg-white text-gray-500 border-gray-100 hover:bg-orange-50'}`}
+                                    className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${isRecording ? 'text-red-500 bg-red-50 animate-pulse' : 'text-gray-500 hover:text-orange-500 hover:bg-orange-50'}`}
                                     title="按住说话"
                                 >
-                                    <Icon name="mic" size={24} className={isRecording ? 'animate-pulse' : ''} />
+                                    <Icon name="mic" size={20} className={isRecording ? 'animate-pulse' : ''} />
                                 </button>
                             </div>
 
-                            {/* Clean Input Bar */}
                             <div className="flex-1 bg-white/90 backdrop-blur-xl rounded-full shadow-xl border-4 border-white flex items-center p-1.5 transition-all focus-within:ring-4 focus-within:ring-orange-200 focus-within:border-orange-100">
                                 <form onSubmit={(e) => handleSendMessage(e)} className="flex-1 flex items-center mx-3 relative">
                                     {selectedImage && (
-                                        <div className="absolute bottom-10 left-0 bg-white p-1 rounded-lg shadow-lg border border-gray-200 animate-in zoom-in">
+                                        <div className="absolute bottom-12 left-0 bg-white p-1 rounded-lg shadow-lg border border-gray-200 animate-in zoom-in">
                                             <img src={selectedImage} className="h-16 w-16 object-cover rounded-md" />
                                             <button type="button" onClick={() => { playClick(); setSelectedImage(null); }} className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-0.5 hover:bg-red-600 shadow-sm"><Icon name="x" size={12} /></button>
                                         </div>
@@ -533,7 +530,6 @@
                         </div>
                     </div>
 
-                    {/* Menu */}
                     <div className="absolute top-4 right-4 z-30 flex flex-col gap-3">
                         <button onClick={() => { playClick(); setShowSettings(true); }} className="bg-white/60 backdrop-blur-sm p-3 rounded-full hover:bg-white transition shadow-md border-2 border-white text-gray-600" title="设置">
                             <Icon name="settings" size={24} />
@@ -541,11 +537,14 @@
                         <button onClick={() => { playClick(); setSfxEnabled(!sfxEnabled); }} className={`bg-white/60 backdrop-blur-sm p-3 rounded-full hover:bg-white transition shadow-md border-2 ${sfxEnabled ? 'border-blue-200 text-blue-500' : 'border-white text-gray-400'}`} title="音效">
                             {sfxEnabled ? <Icon name="volume2" size={24} /> : <Icon name="volumeX" size={24} />}
                         </button>
-                        <button onClick={() => { playClick(); generateTrajectoryAPI(); setShowMap(!showMap); setShowWardrobe(false); }} className={`bg-white/60 backdrop-blur-sm p-3 rounded-full hover:bg-white transition shadow-md border-2 ${showMap ? 'border-orange-300 text-orange-500 bg-white' : 'border-white text-gray-600'}`} title="足迹">
+                        <button onClick={() => { playClick(); generateTrajectoryAPI(); closeModals(); setShowMap(true); }} className={`bg-white/60 backdrop-blur-sm p-3 rounded-full hover:bg-white transition shadow-md border-2 ${showMap ? 'border-orange-300 text-orange-500 bg-white' : 'border-white text-gray-600'}`} title="足迹">
                             <Icon name="map" size={24} />
                         </button>
-                        <button onClick={() => { playClick(); setShowWardrobe(!showWardrobe); setShowMap(false); }} className={`bg-white/60 backdrop-blur-sm p-3 rounded-full hover:bg-white transition shadow-md border-2 ${showWardrobe ? 'border-blue-300 text-blue-500 bg-white' : 'border-white text-gray-600'}`} title="衣橱">
-                            <Icon name="shirt" size={24} />
+                        <button onClick={() => { playClick(); closeModals(); setShowShop(true); }} className={`bg-white/60 backdrop-blur-sm p-3 rounded-full hover:bg-white transition shadow-md border-2 ${showShop ? 'border-blue-300 text-blue-500 bg-white' : 'border-white text-gray-600'}`} title="商城">
+                            <Icon name="shopping" size={24} />
+                        </button>
+                        <button onClick={() => { playClick(); generateFortuneAPI(); closeModals(); }} className={`bg-white/60 backdrop-blur-sm p-3 rounded-full hover:bg-white transition shadow-md border-2 ${showFortune ? 'border-yellow-300 text-yellow-500 bg-white' : 'border-white text-gray-600'}`} title="灵签">
+                            <Icon name="sparkles" size={24} />
                         </button>
                     </div>
 
@@ -583,26 +582,83 @@
                         </div>
                     )}
 
-                    {showWardrobe && (
+                    {showShop && (
                         <div className="absolute top-24 right-4 z-40 bg-white/95 backdrop-blur-xl rounded-3xl shadow-2xl border-2 border-white w-72 animate-in fade-in zoom-in slide-in-from-top-4 duration-300 p-5">
-                            <div className="flex justify-between items-center mb-5 border-b border-gray-100 pb-3">
-                                <h3 className="font-bold text-gray-800 text-lg flex items-center gap-2"><Icon name="shirt" size={20}/> 萌物衣橱</h3>
-                                <button onClick={() => { playClick(); setShowWardrobe(false); }} className="text-gray-400 hover:text-gray-600 bg-gray-50 rounded-full p-1"><Icon name="x" size={18} /></button>
+                            <div className="flex justify-between items-center mb-4 border-b border-gray-100 pb-3">
+                                <h3 className="font-bold text-gray-800 text-lg flex items-center gap-2"><Icon name="shopping" size={20}/> 虎虎商城</h3>
+                                <button onClick={() => { playClick(); setShowShop(false); }} className="text-gray-400 hover:text-gray-600 bg-gray-50 rounded-full p-1"><Icon name="x" size={18} /></button>
                             </div>
-                            <div className="grid grid-cols-3 gap-3">
-                                {[
-                                    { id: 'none', icon: '🚫', label: '原皮' },
-                                    { id: 'chefhat', icon: '👨‍🍳', label: '大厨帽' },
-                                    { id: 'sunglasses', icon: '🕶️', label: '酷墨镜' },
-                                    { id: 'bowtie', icon: '🎀', label: '红领结' },
-                                    { id: 'flower', icon: '🌸', label: '小发花' },
-                                ].map(item => (
-                                    <button key={item.id} onClick={() => { playClick(); setOutfit({ ...outfit, accessory: item.id }) }} className={`flex flex-col items-center justify-center p-3 rounded-2xl border-2 transition-all ${outfit.accessory === item.id ? 'bg-orange-50 border-orange-400 text-orange-600 shadow-sm scale-105' : 'bg-gray-50 border-transparent text-gray-500 hover:bg-white hover:border-gray-200 hover:shadow-sm'}`}>
-                                        <span className="text-2xl mb-1 filter drop-shadow-sm">{item.icon}</span>
-                                        <span className="text-[10px] font-bold">{item.label}</span>
-                                    </button>
-                                ))}
+                            
+                            <div className="flex p-1 bg-gray-100 rounded-xl mb-4">
+                                <button onClick={() => { playClick(); setShopTab('clothes') }} className={`flex-1 py-1.5 text-xs font-bold rounded-lg transition ${shopTab === 'clothes' ? 'bg-white text-blue-500 shadow' : 'text-gray-400'}`}>服饰</button>
+                                <button onClick={() => { playClick(); setShopTab('food') }} className={`flex-1 py-1.5 text-xs font-bold rounded-lg transition ${shopTab === 'food' ? 'bg-white text-orange-500 shadow' : 'text-gray-400'}`}>食品/娱乐</button>
                             </div>
+
+                            {shopTab === 'clothes' ? (
+                                <div className="grid grid-cols-3 gap-3">
+                                    {[
+                                        { id: 'none', icon: '🚫', label: '原皮', price: 0, type: 'clothes' },
+                                        { id: 'chefhat', icon: '👨‍🍳', label: '大厨', price: 10, type: 'clothes' },
+                                        { id: 'sunglasses', icon: '🕶️', label: '酷盖', price: 15, type: 'clothes' },
+                                        { id: 'bowtie', icon: '🎀', label: '领结', price: 5, type: 'clothes' },
+                                        { id: 'flower', icon: '🌸', label: '小花', price: 5, type: 'clothes' },
+                                    ].map(item => (
+                                        <button key={item.id} onClick={() => { playClick(); buyItem(item) }} className={`flex flex-col items-center justify-center p-3 rounded-2xl border-2 transition-all ${outfit.accessory === item.id ? 'bg-blue-50 border-blue-400 text-blue-600' : 'bg-gray-50 border-transparent text-gray-500 hover:bg-white hover:border-blue-200'}`}>
+                                            <span className="text-2xl mb-1">{item.icon}</span>
+                                            <span className="text-[10px] font-bold mb-1">{item.label}</span>
+                                            <span className="text-[9px] text-orange-500 font-mono">💰{item.price}</span>
+                                        </button>
+                                    ))}
+                                </div>
+                            ) : (
+                                <div className="grid grid-cols-3 gap-3">
+                                    {[
+                                        { id: 'noodles', icon: '🍜', label: '热干面', price: 5, type: 'food' },
+                                        { id: 'fish', icon: '🐟', label: '小鱼干', price: 3, type: 'food' },
+                                        { id: 'ticket', icon: '🎡', label: '游乐园', price: 50, type: 'fun' },
+                                    ].map(item => (
+                                        <button key={item.id} onClick={() => { playClick(); buyItem(item) }} className="flex flex-col items-center justify-center p-3 rounded-2xl border-2 border-transparent bg-orange-50 hover:bg-white hover:border-orange-200 transition-all">
+                                            <span className="text-2xl mb-1">{item.icon}</span>
+                                            <span className="text-[10px] font-bold mb-1">{item.label}</span>
+                                            <span className="text-[9px] text-orange-500 font-mono">💰{item.price}</span>
+                                        </button>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    )}
+                    
+                    {/* Fortune Modal */}
+                    {showFortune && (
+                        <div className="absolute top-24 right-4 z-40 bg-gradient-to-br from-red-500 to-orange-600 text-white shadow-2xl rounded-3xl w-72 animate-in fade-in zoom-in slide-in-from-top-4 duration-500 p-1 overflow-hidden border-4 border-yellow-400/30">
+                           <div className="bg-white/10 backdrop-blur-sm p-5 h-full rounded-[1.2rem] flex flex-col items-center text-center relative">
+                                <button onClick={() => setShowFortune(false)} className="absolute top-3 right-3 text-white/70 hover:text-white hover:bg-white/20 rounded-full p-1 transition"><Icon name="x" size={18}/></button>
+                                
+                                <h3 className="font-bold text-xl mb-4 flex items-center gap-2 text-yellow-100"><Icon name="sparkles" size={20}/> 虎虎灵签</h3>
+                                
+                                {isGeneratingFortune ? (
+                                    <div className="py-10 flex flex-col items-center gap-3">
+                                        <Icon name="loader" size={36} className="animate-spin text-yellow-300"/>
+                                        <span className="text-sm text-yellow-100 animate-pulse">大王正在求签...</span>
+                                    </div>
+                                ) : fortuneData ? (
+                                    <div className="space-y-4 animate-in zoom-in duration-500">
+                                        <div className="text-6xl font-bold text-yellow-300 drop-shadow-md my-2 font-serif">{fortuneData.level}</div>
+                                        
+                                        <div className="bg-white/20 rounded-xl p-3 w-full">
+                                            <div className="text-xs text-red-100 mb-1 uppercase tracking-wider">今日幸运物</div>
+                                            <div className="font-bold text-lg">{fortuneData.item}</div>
+                                        </div>
+                                        
+                                        <div className="bg-white/20 rounded-xl p-3 w-full">
+                                            <div className="text-xs text-red-100 mb-1 uppercase tracking-wider">大王寄语</div>
+                                            <div className="text-sm leading-relaxed italic">“{fortuneData.advice}”</div>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div className="py-8 text-sm">似乎网络不太好，再试一次？</div>
+                                )}
+                           </div>
                         </div>
                     )}
 
