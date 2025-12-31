@@ -38,7 +38,8 @@
         // 注意：部署到 GitHub/Vercel 时，defaultSystemKey 通常为空。
         // 用户必须在界面右上角的“设置”中输入自己的 Key。
         const defaultSystemKey = ""; 
-        const DEFAULT_MODEL_NAME = "gemini-2.5-flash-preview-09-2025";
+        // 修改：使用更稳定的 1.5-flash 作为默认模型
+        const DEFAULT_MODEL_NAME = "gemini-1.5-flash";
         const DEFAULT_BASE_URL = "https://generativelanguage.googleapis.com";
 
         const formatTime = (seconds) => {
@@ -61,7 +62,7 @@
                 avatar: "https://i.postimg.cc/RZmrDxMb/copy_AB316F48_3F37_4358_873E_2ADB610546AE2_ezgif-com-gif-maker.gif",
                 avatarType: 'image',
                 className: "w-[24rem] h-[24rem] sm:w-[32rem] sm:h-[32rem] object-contain drop-shadow-2xl cursor-pointer hover:scale-105 transition-transform translate-y-16 sm:translate-y-24 pointer-events-auto",
-                greetings: "嘿嘿，你来啦！(吸溜) 我刚好像闻到了牛肉粉的味道... (如果你没理我，可能是因为没设 API Key 哦)",
+                greetings: "嘿嘿，你来啦！(吸溜) 我刚好像闻到了牛肉粉的味道... (如果我不理你，记得检查下网络和 Key 哦)",
                 persona: `你叫“奇奇”，是湖北省博物馆国宝“虎座凤鸟悬鼓”底座的小老虎。
                 【身世】和周周（凤凰）相依为命，没有父母，住在一起。
                 【性格】呆萌、乐观、超级吃货（爱热干面）、有点憨。
@@ -370,14 +371,27 @@
                             ? [{ role: "user", parts: parts }] 
                             : [...chatHistory, { role: "user", parts: parts }],
                         systemInstruction: { parts: [{ text: curChar.persona }] }, 
-                        generationConfig: { responseMimeType: "text/plain" }
+                        generationConfig: { responseMimeType: "text/plain" },
+                        // 新增安全设置，防止误拦截
+                        safetySettings: [
+                            { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_NONE" },
+                            { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "BLOCK_NONE" },
+                            { category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold: "BLOCK_NONE" },
+                            { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_NONE" }
+                        ]
                     };
 
                     const response = await fetch(`${baseUrlToUse}/v1beta/models/${userModel}:generateContent?key=${keyToUse}`, {
                         method: 'POST', headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify(requestBody)
                     });
-                    if (!response.ok) return "（晕乎乎）网络好像有点卡... 请检查你的 API Key 对不对哦！";
+                    
+                    if (!response.ok) {
+                        const errData = await response.json().catch(() => ({}));
+                        console.error("API Error:", response.status, errData);
+                        return `（出错啦）代码: ${response.status}。请按F12看控制台详细报错，或检查API设置（是否需要代理？）。`;
+                    }
+                    
                     const data = await response.json();
                     const botResponse = data.candidates?.[0]?.content?.parts?.[0]?.text;
                     
@@ -396,7 +410,10 @@
                     }
                     
                     return botResponse;
-                } catch (error) { return "（大脑连接断开了...）请检查你的网络或API配置。"; }
+                } catch (error) { 
+                    console.error("Fetch Error:", error);
+                    return "（大脑连接断开了...）请检查你的网络环境（是否需要开启VPN？）"; 
+                }
             };
 
             const resetAutoChatTimer = useCallback(() => {
@@ -639,11 +656,33 @@
                         body: JSON.stringify({ 
                             contents: [{ role: "user", parts: [{ text: prompt }] }], 
                             systemInstruction: { parts: [{ text: "You are a JSON generator." }] },
-                            generationConfig: { responseMimeType: "application/json" } 
+                            generationConfig: { responseMimeType: "application/json" },
+                            safetySettings: [
+                                { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_NONE" },
+                                { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "BLOCK_NONE" },
+                                { category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold: "BLOCK_NONE" },
+                                { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_NONE" }
+                            ]
                         })
                     });
                     
-                    if (!response.ok) throw new Error("Gen Failed");
+                    if (!response.ok) {
+                        const errData = await response.json().catch(() => ({}));
+                        console.error("API Error:", response.status, errData);
+                        // 结束 loading 状态
+                        setIsGeneratingTrajectory(false);
+                        // 提示用户
+                        updateCurrentTrajectory([{
+                            id: Date.now(),
+                            time: now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                            location: 'API错误',
+                            category: 'rest',
+                            thought: `哎呀，写日记失败了... (错误代码: ${response.status})。请检查API设置或网络代理。`,
+                            coinsChange: 0, hungerChange: 0, moodChange: 0
+                        }]);
+                        return;
+                    }
+
                     const data = await response.json();
                     const jsonText = data.candidates?.[0]?.content?.parts?.[0]?.text;
                     if (jsonText) {
@@ -704,7 +743,11 @@
                             playMagic();
                         }
                     }
-                } catch (error) { } 
+                } catch (error) { 
+                    console.error(error);
+                    // 发生错误时，确保解除 loading
+                    setIsGeneratingTrajectory(false);
+                } 
                 finally { setIsGeneratingTrajectory(false); }
             };
 
@@ -917,9 +960,9 @@
                                             onChange={(e) => setTempModel(e.target.value)}
                                             className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-orange-500 outline-none transition-all bg-white text-sm"
                                         >
-                                            <option value="gemini-2.5-flash-preview-09-2025">Gemini 2.5 Flash (最新、极速)</option>
                                             <option value="gemini-1.5-flash">Gemini 1.5 Flash (稳定、经济)</option>
                                             <option value="gemini-1.5-pro">Gemini 1.5 Pro (聪明、逻辑强)</option>
+                                            <option value="gemini-2.0-flash-exp">Gemini 2.0 Flash Exp (最新预览)</option>
                                         </select>
                                     </div>
 
