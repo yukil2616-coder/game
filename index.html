@@ -4,7 +4,8 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 // 1. 系统配置与工具函数
 // -----------------------------------------------------------------------------
 
-// 系统会自动注入 Key (作为默认后备)
+// 注意：部署到 GitHub 时，defaultSystemKey 通常为空。
+// 用户必须在界面右上角的“设置”中输入自己的 Key。
 const defaultSystemKey = ""; 
 const DEFAULT_MODEL_NAME = "gemini-2.5-flash-preview-09-2025";
 const DEFAULT_BASE_URL = "https://generativelanguage.googleapis.com";
@@ -29,7 +30,7 @@ const CHARACTERS = {
         avatar: "https://i.postimg.cc/RZmrDxMb/copy_AB316F48_3F37_4358_873E_2ADB610546AE2_ezgif-com-gif-maker.gif",
         avatarType: 'image',
         className: "w-[24rem] h-[24rem] sm:w-[32rem] sm:h-[32rem] object-contain drop-shadow-2xl cursor-pointer hover:scale-105 transition-transform translate-y-16 sm:translate-y-24 pointer-events-auto",
-        greetings: "嘿嘿，你来啦！(吸溜) 我刚好像闻到了牛肉粉的味道...",
+        greetings: "嘿嘿，你来啦！(吸溜) 我刚好像闻到了牛肉粉的味道... (如果你没理我，可能是因为没设 API Key 哦)",
         persona: `你叫“奇奇”，是湖北省博物馆国宝“虎座凤鸟悬鼓”底座的小老虎。
         【身世】和周周（凤凰）相依为命，没有父母，住在一起。
         【性格】呆萌、乐观、超级吃货（爱热干面）、有点憨。
@@ -51,7 +52,7 @@ const CHARACTERS = {
         avatar: "https://i.postimg.cc/c4QMTVk3/222222_ezgif_com_gif_maker_(1).gif",
         avatarType: 'image',
         className: "w-[24rem] h-[24rem] sm:w-[32rem] sm:h-[32rem] object-contain drop-shadow-2xl cursor-pointer hover:scale-105 transition-transform translate-y-10 sm:translate-y-14 pointer-events-auto",
-        greetings: "你好呀... (轻轻挥翅膀) 奇奇刚才好大声哦，我的耳朵都要被震晕啦。",
+        greetings: "你好呀... (轻轻挥翅膀) 奇奇刚才好大声哦，我的耳朵都要被震晕啦。(记得在设置里填 Key 哦)",
         persona: `你叫“周周”，是湖北省博物馆“虎座凤鸟悬鼓”上面的小凤凰。
         【身世】无父母，和奇奇是相依为命的小伙伴。
         【性格：文静、乖巧、温柔的幼儿园小朋友】
@@ -298,12 +299,19 @@ export default function App() {
     });
 
     const callGeminiAPI = async (userContent) => {
-        try {
-            // 优先使用用户配置的 Key，否则使用系统默认
-            const keyToUse = userApiKey || defaultSystemKey || "";
-            // 优先使用用户配置的 BaseURL
-            const baseUrlToUse = (userBaseUrl || DEFAULT_BASE_URL).replace(/\/$/, ""); 
+        // 优先使用用户配置的 Key，否则使用系统默认
+        const keyToUse = userApiKey || defaultSystemKey || "";
+        // 优先使用用户配置的 BaseURL
+        const baseUrlToUse = (userBaseUrl || DEFAULT_BASE_URL).replace(/\/$/, ""); 
 
+        // 安全检查：如果没有 Key，直接提示用户
+        if (!keyToUse) {
+            setCurrentBotText("（歪头）咦？我好像听不到你在说什么... 你是不是忘记在右上角的【设置】里填 API Key 啦？");
+            showBubble();
+            return;
+        }
+
+        try {
             let parts;
             if (userContent.isAuto) {
                 parts = [{ text: userContent.text }];
@@ -338,7 +346,7 @@ export default function App() {
                 method: 'POST', headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(requestBody)
             });
-            if (!response.ok) return "（网络有点卡...请检查API设置）";
+            if (!response.ok) return "（晕乎乎）网络好像有点卡... 请检查你的 API Key 对不对哦！";
             const data = await response.json();
             const botResponse = data.candidates?.[0]?.content?.parts?.[0]?.text;
             
@@ -357,7 +365,7 @@ export default function App() {
             }
             
             return botResponse;
-        } catch (error) { return "（大脑连接断开了...请检查API配置）"; }
+        } catch (error) { return "（大脑连接断开了...）请检查你的网络或API配置。"; }
     };
 
     const resetAutoChatTimer = useCallback(() => {
@@ -504,6 +512,22 @@ export default function App() {
             const keyToUse = userApiKey || defaultSystemKey || "";
             // Base URL (优先用户设置)
             const baseUrlToUse = (userBaseUrl || DEFAULT_BASE_URL).replace(/\/$/, ""); 
+
+            // 安全检查：如果没有 Key，提示用户
+            if (!keyToUse) {
+                // 这里我们可以在界面上显示一个临时提示，或者生成一个“假”日记告诉用户需要Key
+                const fakeItem = {
+                    id: Date.now(),
+                    time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                    location: '设置界面',
+                    category: 'rest',
+                    thought: '（挠头）我想写日记，但是没有 API Key... 你能去右上角设置里填一下吗？',
+                    coinsChange: 0, hungerChange: 0, moodChange: 0
+                };
+                updateCurrentTrajectory([fakeItem]);
+                setIsGeneratingTrajectory(false);
+                return;
+            }
 
             const now = new Date();
             const timeString = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
